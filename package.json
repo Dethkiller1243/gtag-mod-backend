@@ -1,0 +1,16 @@
+{
+  "name": "gtag-mod-backend",
+  "version": "1.0.0",
+  "description": "Upload dashboard + version/download/admin API for a Gorilla Tag mod, backed by GitHub storage",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}
