@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Mod Upload Dashboard</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #0f1115; color: #eee; display: flex;
+         align-items: center; justify-content: center; height: 100vh; margin: 0; }
+  .card { background: #1a1d24; padding: 32px; border-radius: 12px; width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+  h1 { font-size: 20px; margin-top: 0; }
+  label { display: block; margin: 14px 0 6px; font-size: 13px; color: #aaa; }
+  input[type=text], input[type=password] { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #333;
+         background: #0f1115; color: #eee; box-sizing: border-box; }
+  input[type=file] { width: 100%; }
+  button { margin-top: 20px; width: 100%; padding: 10px; border: none; border-radius: 6px;
+           background: #4f8cff; color: white; font-weight: 600; cursor: pointer; }
+  button:hover { background: #3d7ae0; }
+  #status { margin-top: 14px; font-size: 13px; white-space: pre-wrap; }
+  #current { margin-top: 22px; font-size: 12px; color: #888; border-top: 1px solid #2a2d34; padding-top: 12px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Upload new mod build</h1>
+    <form id="uploadForm">
+      <label>Upload key</label>
+      <input type="password" id="key" required />
+
+      <label>Version (e.g. 1.4.2)</label>
+      <input type="text" id="version" required />
+
+      <label>DLL file</label>
+      <input type="file" id="modfile" accept=".dll" required />
+
+      <button type="submit">Upload & Publish</button>
+    </form>
+    <div id="status"></div>
+    <div id="current">Loading current version...</div>
+
+    <div id="adminSection" style="margin-top:24px;">
+      <label style="margin-bottom:6px;">Add admin (in-game name)</label>
+      <input type="text" id="adminName" placeholder="username" />
+      <button type="button" id="addAdminBtn" style="margin-top:8px;">Add to admin list</button>
+      <div id="adminList" style="margin-top:12px; font-size:12px; color:#aaa;"></div>
+    </div>
+  </div>
+
+<script>
+async function refreshCurrent() {
+  const res = await fetch("/version");
+  const data = await res.json();
+  document.getElementById("current").textContent =
+    "Current live version: " + (data.version || "none yet");
+}
+refreshCurrent();
+
+document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const status = document.getElementById("status");
+  status.textContent = "Uploading...";
+
+  const formData = new FormData();
+  formData.append("key", document.getElementById("key").value);
+  formData.append("version", document.getElementById("version").value);
+  formData.append("modfile", document.getElementById("modfile").files[0]);
+
+  try {
+    const res = await fetch("/upload", { method: "POST", body: formData });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Upload failed");
+    status.textContent = "✅ Published v" + data.version;
+    refreshCurrent();
+  } catch (err) {
+    status.textContent = "❌ " + err.message;
+  }
+});
+
+async function refreshAdmins() {
+  const res = await fetch("/admins");
+  const data = await res.json();
+  const listEl = document.getElementById("adminList");
+  listEl.innerHTML = data.admins.length
+    ? data.admins.map(n => `${n} <a href="#" data-name="${n}" class="rm" style="color:#f66;">[remove]</a>`).join("<br>")
+    : "No admins added yet.";
+  document.querySelectorAll(".rm").forEach(el => {
+    el.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const key = document.getElementById("key").value;
+      await fetch("/admins/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, name: e.target.dataset.name }),
+      });
+      refreshAdmins();
+    });
+  });
+}
+refreshAdmins();
+
+document.getElementById("addAdminBtn").addEventListener("click", async () => {
+  const key = document.getElementById("key").value;
+  const name = document.getElementById("adminName").value.trim();
+  if (!key || !name) return alert("Enter your upload key and a name first.");
+  const res = await fetch("/admins/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key, name }),
+  });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || "Failed to add");
+  document.getElementById("adminName").value = "";
+  refreshAdmins();
+});
+</script>
+</body>
+</html>
