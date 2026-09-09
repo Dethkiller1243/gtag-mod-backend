@@ -1,0 +1,9 @@
+{
+  "name": "gtag-mod-backend",
+  "version": "1.2.0",
+  "description": "GTag mod updater, admin dashboard, bans, and room command API",
+  "main": "server.js",
+  "engines": { "node": ">=18" },
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "express": "^4.19.2", "multer": "^1.4.5-lts.1" }
+}
