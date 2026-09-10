@@ -35,8 +35,11 @@ async function ghGetSha(filePath) {
   );
 
   if (r.status === 404) return null;
+
   if (!r.ok) {
-    throw new Error(`GitHub GET ${filePath} failed: ${r.status}`);
+    throw new Error(
+      `GitHub GET ${filePath} failed: ${r.status}`
+    );
   }
 
   return (await r.json()).sha;
@@ -72,7 +75,9 @@ async function ghPutFile(filePath, buffer, message) {
 }
 
 async function ghGetJson(filePath, fallback) {
-  const r = await fetch(`${GH_RAW}/${filePath}?t=${Date.now()}`);
+  const r = await fetch(
+    `${GH_RAW}/${filePath}?t=${Date.now()}`
+  );
 
   if (r.status === 404) return fallback;
 
@@ -512,8 +517,6 @@ app.post("/admin/command", async (req, res) => {
     const dashboardAdmin =
       await isDashboardAdmin(adminId);
 
-    // Code-admin mode is intentionally supported
-    // for this client-controlled minigame.
     if (
       !dashboardAdmin &&
       !(ALLOW_CODE_ADMINS && codeAdmin === true)
@@ -559,9 +562,7 @@ app.post("/admin/command", async (req, res) => {
 
     commandQueue.push(c);
 
-    while (
-      commandQueue.length > MAX_COMMANDS
-    ) {
+    while (commandQueue.length > MAX_COMMANDS) {
       commandQueue.shift();
     }
 
@@ -577,7 +578,7 @@ app.post("/admin/command", async (req, res) => {
 });
 
 // ============================================================
-// FIXED COMMAND POLLING
+// FIXED ADMIN COMMAND POLLING
 // ============================================================
 
 app.get("/admin/commands", (req, res) => {
@@ -596,8 +597,6 @@ app.get("/admin/commands", (req, res) => {
     });
   }
 
-  // Only return commands for this player
-  // in this specific room.
   const commands = commandQueue.filter(c =>
     c.id > after &&
     c.room === room &&
@@ -607,9 +606,6 @@ app.get("/admin/commands", (req, res) => {
     )
   );
 
-  // IMPORTANT:
-  // Only advance the player's cursor through
-  // commands that were actually returned to them.
   const latestId = commands.length
     ? Math.max(
         after,
@@ -624,7 +620,7 @@ app.get("/admin/commands", (req, res) => {
 });
 
 // ============================================================
-// HEALTH / ROOT
+// HEALTH
 // ============================================================
 
 app.get("/health", (req, res) => {
@@ -639,10 +635,6 @@ app.get("/", (req, res) => {
     "Gorilla Tag Mod Backend API is live."
   );
 });
-
-// ============================================================
-// START SERVER
-// ============================================================
 
 app.listen(PORT, () => {
   console.log(
