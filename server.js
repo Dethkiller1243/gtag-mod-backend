@@ -115,6 +115,28 @@ app.get("/admin/commands",(req,res)=>{
 
   res.json({latestId,commands});
 });
+app.get("/admin/diagnostic",async(req,res)=>{try{
+  const playerId=String(req.query.playerId||"").trim();
+  const room=String(req.query.room||"").trim();
+  const after=Number(req.query.after||0);
+  if(!playerId||!room)return res.status(400).json({error:"Missing playerId or room"});
+  const admins=await ghGetJson("admins.json",[]);
+  const bans=await ghGetJson("bans.json",[]);
+  const targeted=commandQueue.filter(c=>c.room===room&&(c.targetId==="*"||sameId(c.targetId,playerId)));
+  res.json({
+    ok:true,
+    playerId,
+    room,
+    isDashboardAdmin:admins.some(x=>sameId(x,playerId)),
+    isBanned:bans.some(x=>sameId(x,playerId)),
+    queueLength:commandQueue.length,
+    latestCommandId:nextCommandId-1,
+    commandsForPlayer:targeted.length,
+    commandsAfterCursor:targeted.filter(c=>c.id>after).length,
+    newestCommandForPlayer:targeted.length?targeted[targeted.length-1]:null,
+    serverTime:Date.now()
+  });
+}catch(e){res.status(500).json({error:e.message});}});
 app.get("/health",(req,res)=>res.json({ok:true,allowCodeAdmins:ALLOW_CODE_ADMINS}));
 app.get("/",(req,res)=>res.send("Gorilla Tag Mod Backend API is live."));
 app.listen(PORT,()=>console.log(`GTag backend listening on ${PORT}`));
